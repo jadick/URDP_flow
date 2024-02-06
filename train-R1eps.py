@@ -5,7 +5,6 @@ import pandas as pd
 import torch
 import yaml
 from torch.utils.data import DataLoader
-#from utils import *
 import matplotlib.pyplot as plt
 import torch.nn.utils.spectral_norm as spectralnorm
 from torch.nn import init
@@ -16,6 +15,7 @@ from models import *
 from utils import *
 import torch.nn.functional as F
 from helper import *
+import time
 
 cuda = True
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
@@ -35,7 +35,7 @@ lambda_MSE = 10
 """
 parser = argparse.ArgumentParser('training config')
 parser.add_argument('--total_epochs', type=int, default=300, help='number of epochs of training')
-parser.add_argument('--lambda_gp', type=int, default=10, help='number of epochs of training')
+parser.add_argument('--lambda_gp', type=int, default=10, help='lambda for gradient penalty')
 parser.add_argument('--bs', type=int, default=64, help='size of the batch')
 parser.add_argument('--dim', type=int, default=128, help='common_dim')
 parser.add_argument('--z_dim', type=int, default=1, help='z dim')
@@ -44,8 +44,8 @@ parser.add_argument('--skip_fq', type=int, default=5, help='loop frequency for W
 parser.add_argument('--d_penalty', type=float, default=0.0, help='diversity penalty')
 parser.add_argument('--lambda_P', type=float, default=0.0, help='Perceptual Penalty, keep at 1.0')
 parser.add_argument('--lambda_PM', type=float, default=0.0, help='Perceptual Penalty Marginal, keep at 1.0')
-parser.add_argument('--lambda_MSE', type=float, default=1.0, help='Perceptual Penalty')
-parser.add_argument('--path', type=str, default='./data/', help='Perceptual Penalty')
+parser.add_argument('--lambda_MSE', type=float, default=1.0, help='MSE Penalty')
+parser.add_argument('--path', type=str, default='./data/', help='Data path')
 parser.add_argument('--pre_path', type=str, default='./fixed_models/', help='Pretrained_Path')
 
 def set_models_state(list_models, state):
@@ -156,6 +156,7 @@ def cal_W1_MMSE(ssf, encoder, decoder, discriminator, discriminator_M, test_load
 
 
 def main():
+    start= time.time()
     args = parser.parse_args()
     #Params
     dim = args.dim#128
@@ -167,7 +168,7 @@ def main():
     total_epochs = args.total_epochs #200
     lambda_P = args.lambda_P*1e-3
     lambda_PM = args.lambda_PM*1e-3
-    lambda_MSE = args.lambda_MSE*1e-3
+    lambda_MSE = args.lambda_MSE
     L = args.L
     path = args.path
     pre_path = args.pre_path
@@ -181,7 +182,7 @@ def main():
     print ('Stochastic: ', stochastic)
     print ('Quantize: ', quantize_latents)
     #Create folder:
-    folder_name='New_R1eps_dim_'+str(dim)+'|z_dim_'+str(z_dim)+'|L_'+str(L)+'|lambda_gp_'+str(lambda_gp) \
+    folder_name='R1-eps|_dim_'+str(dim)+'|z_dim_'+str(z_dim)+'|L_'+str(L)+'|lambda_gp_'+str(lambda_gp) \
         +'|bs_'+str(bs)+'|dpenalty_'+str(d_penalty)+'|lambdaP_'+str(lambda_P)+'|lambdaPM_'+str(lambda_PM)+'|lambdaMSE_' + str(lambda_MSE)
     print ("Settings: ", folder_name)
 
@@ -201,6 +202,7 @@ def main():
 
     #Load models:
     if pre_path != 'None':
+        print(f'Initializing weights from: {pre_path}')
         ssf.motion_encoder.load_state_dict(torch.load(pre_path+'/m_enc.pth'))
         ssf.motion_decoder.load_state_dict(torch.load(pre_path+'/m_dec.pth'))
         ssf.P_encoder.load_state_dict(torch.load(pre_path+'/p_enc.pth'))
@@ -223,9 +225,9 @@ def main():
     encoder.eval()
     decoder.eval()
     decoder_hat.eval()
-    encoder.load_state_dict(torch.load('./Iframe/I3/I_frame_encoder_zdim_12_L_2.pth'))
-    decoder.load_state_dict(torch.load('./Iframe/I3/I_frame_decoderMMSE_zdim_12_L_2.pth'))
-    decoder_hat.load_state_dict(torch.load('./Iframe/I3/I_frame_decoder_zdim_12_L_2.pth'))
+    encoder.load_state_dict(torch.load('./I3/I_frame_encoder_zdim_12_L_2.pth'))
+    decoder.load_state_dict(torch.load('./I3/I_frame_decoderMMSE_zdim_12_L_2.pth'))
+    decoder_hat.load_state_dict(torch.load('./I3/I_frame_decoder_zdim_12_L_2.pth'))
 
     #Define Data Loader
     train_loader, test_loader = get_dataloader(data_root=path, seq_len=8, batch_size=bs, num_digits=1)
@@ -239,6 +241,7 @@ def main():
     list_opt = [opt_ssf, opt_d, opt_dm]
 
     for epoch in range(total_epochs):
+        a = time.time()
         set_models_state(list_models, 'train')
         for i,x in enumerate(iter(train_loader)):
             #Set 0 gradient
@@ -295,21 +298,24 @@ def main():
 
                 opt_ssf.step()
 
-        if epoch %10 == 0:
-            show_str= "Epoch: "+ str(epoch) + "l_PM, l_P, l_MSE, d_penalty " + str(lambda_PM) + str(lambda_P)+ " " \
-            +str(lambda_MSE) + " " + str(d_penalty) + " P loss: " + str(cal_W1(ssf, encoder, decoder, decoder_hat, discriminator, discriminator_M, test_loader, list_models))
+        if ((epoch+1) % 10 == 0) or (epoch == 0):
+            b = time.time()
+            show_str= "Epoch: "+ str(epoch+1) + " l_PM, l_P, l_MSE, d_penalty " + str(lambda_PM) + str(lambda_P)+ " " \
+                    +str(lambda_MSE) + " " + str(d_penalty) + " P loss: " + str(cal_W1(ssf, encoder, decoder, decoder_hat, discriminator, discriminator_M, test_loader, list_models)) \
+                    +" Time: " + str((b-a)/60)+' minutes'
             print (show_str)
-
             f.write(show_str+"\n")
+            set_models_state(list_models, 'eval')
+            torch.save(ssf.motion_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'm_enc.pth'))
+            torch.save(ssf.motion_decoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'm_dec.pth'))
+            torch.save(ssf.P_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'p_enc.pth'))
+            torch.save(ssf.res_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_enc.pth'))
+            torch.save(ssf.res_decoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_dec.pth' ))
+            torch.save(discriminator.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator.pth'))
+            torch.save(discriminator_M.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator_M.pth'))
 
-    show_str= "Epoch: "+ str(epoch) + "l_PM, l_P, l_MSE, d_penalty " + str(lambda_PM) + str(lambda_P)+ " " \
-            +str(lambda_MSE) + " " + str(d_penalty) + " P loss: " + str(cal_W1(ssf, encoder, decoder, decoder_hat, discriminator, discriminator_M, test_loader, list_models))
-    print (show_str)
-    f.write(show_str+"\n")
-
-
+    end = time.time()
     set_models_state(list_models, 'eval')
-
     torch.save(ssf.motion_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'm_enc.pth'))
     torch.save(ssf.motion_decoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'm_dec.pth'))
     torch.save(ssf.P_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'p_enc.pth'))
@@ -317,7 +323,7 @@ def main():
     torch.save(ssf.res_decoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_dec.pth' ))
     torch.save(discriminator.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator.pth'))
     torch.save(discriminator_M.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator_M.pth'))
-
+    f.write(f'Total Time: {(end-start)/3600} hours \n')
     f.close()
 
     #save some figures

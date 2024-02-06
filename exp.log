@@ -1,0 +1,13 @@
+Stochastic:  True
+Quantize:  True
+Settings:  R1-eps|_dim_128|z_dim_4|L_2|lambda_gp_10|bs_64|dpenalty_0.0|lambdaP_0.0|lambdaPM_0.0035|lambdaMSE_1.0
+[-1.0, 1.0]
+Initializing weights from: ./saved_models/R1-eps|_dim_128|z_dim_4|L_2|lambda_gp_10|bs_64|dpenalty_0.0|lambdaP_0.0|lambdaPM_0.0|lambdaMSE_1.0
+[-1.0, 1.0]
+Finished Loading MNIST!
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.0070.0 1.0 0.0 P loss: (tensor(2.4129), tensor(3.7284), tensor(0.0196)) Time: 3.436055282751719 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.00070.0 1.0 0.0 P loss: (tensor(5.9065), tensor(6.2893), tensor(0.0130)) Time: 3.5090237498283385 minutes
+Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.00350.0 1.0 0.0 P loss: (tensor(4.5362), tensor(4.8692), tensor(0.0154)) Time: 3.4292487780253094 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.00150.0 1.0 0.0 P loss: (tensor(4.8174), tensor(5.2939), tensor(0.0138)) Time: 3.4058313369750977 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.040.0 1.0 0.0 P loss: (tensor(2.1934), tensor(3.9543), tensor(0.0237)) Time: 3.490950707594554 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.00250.0 1.0 0.0 P loss: (tensor(3.7708), tensor(4.3819), tensor(0.0153)) Time: 3.539393730958303 minutes
