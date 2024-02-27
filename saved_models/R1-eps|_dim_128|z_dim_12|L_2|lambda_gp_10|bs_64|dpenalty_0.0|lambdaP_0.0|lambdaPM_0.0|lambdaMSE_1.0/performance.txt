@@ -3,3 +3,16 @@ Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(5.4113), te
 Epoch: 20 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(5.1046), tensor(6.0835), tensor(0.0098)) Time: 3.4626251498858136 minutes
 Epoch: 30 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(4.9897), tensor(6.1324), tensor(0.0097)) Time: 3.4467795530955 minutes
 Total Time: 1.8138572699493831 hours 
+Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(9.7602), tensor(9.6766), tensor(0.0191)) Time: 5.62554829120636 minutes
+Total Time: 0.21215929296281602 hours 
+Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(8.3474), tensor(8.2445), tensor(0.0149)) Time: 5.564387118816375 minutes
+Epoch: 2 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(7.9260), tensor(7.8465), tensor(0.0137)) Time: 5.648445010185242 minutes
+Epoch: 3 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.8338), tensor(7.0935), tensor(0.0131)) Time: 5.645554780960083 minutes
+Epoch: 4 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.6277), tensor(7.0183), tensor(0.0126)) Time: 5.6459100365638735 minutes
+Epoch: 5 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.3748), tensor(6.8849), tensor(0.0120)) Time: 5.669117788473765 minutes
+Epoch: 6 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.2059), tensor(6.6403), tensor(0.0116)) Time: 5.717429439226787 minutes
+Epoch: 7 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(5.6202), tensor(6.5358), tensor(0.0113)) Time: 5.720074220498403 minutes
+Epoch: 8 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.0791), tensor(6.4543), tensor(0.0110)) Time: 5.7174228946367895 minutes
+Epoch: 9 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(5.0815), tensor(5.7942), tensor(0.0107)) Time: 5.697937782605489 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(5.5954), tensor(6.2767), tensor(0.0105)) Time: 5.655120817820231 minutes
+Total Time: 1.1602463399701648 hours 

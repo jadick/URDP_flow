@@ -1,0 +1,36 @@
+Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(4.8124), tensor(0.0111), tensor(1.4100)) Time: 4.019953548908234 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.2289), tensor(0.0117), tensor(1.2544)) Time: 4.114993266264597 minutes
+Epoch: 20 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.4866), tensor(0.0117), tensor(1.2472)) Time: 4.120836214224497 minutes
+Epoch: 30 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.6816), tensor(0.0116), tensor(1.2233)) Time: 4.119412875175476 minutes
+Epoch: 40 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.6385), tensor(0.0118), tensor(1.1863)) Time: 4.117658416430156 minutes
+Epoch: 50 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.7582), tensor(0.0117), tensor(1.1742)) Time: 4.105251701672872 minutes
+Epoch: 60 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.7932), tensor(0.0118), tensor(1.1628)) Time: 4.0958291093508405 minutes
+Epoch: 70 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.8013), tensor(0.0118), tensor(1.1510)) Time: 4.065355761845907 minutes
+Epoch: 80 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.8903), tensor(0.0119), tensor(1.1690)) Time: 4.076029984156291 minutes
+Epoch: 90 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.8106), tensor(0.0118), tensor(1.1199)) Time: 4.0749318917592365 minutes
+Epoch: 100 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9075), tensor(0.0119), tensor(1.1262)) Time: 4.079584674040476 minutes
+Total Time: 7.101425460378329 hours 
+Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.8384), tensor(0.0120), tensor(1.0658)) Time: 3.9971458276112872 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.8903), tensor(0.0120), tensor(1.0727)) Time: 4.123927370707194 minutes
+Epoch: 20 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9687), tensor(0.0117), tensor(1.1383)) Time: 4.121378294626871 minutes
+Epoch: 30 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.8634), tensor(0.0118), tensor(1.0778)) Time: 4.120702052116394 minutes
+Epoch: 40 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9965), tensor(0.0118), tensor(1.1029)) Time: 4.122624206542969 minutes
+Epoch: 50 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9566), tensor(0.0118), tensor(1.0980)) Time: 4.12073339621226 minutes
+Epoch: 60 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9966), tensor(0.0118), tensor(1.0772)) Time: 4.120998207728068 minutes
+Epoch: 70 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9193), tensor(0.0117), tensor(1.0656)) Time: 4.109350673357645 minutes
+Epoch: 80 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(5.9414), tensor(0.0118), tensor(1.0614)) Time: 4.093323449293773 minutes
+Epoch: 90 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0069), tensor(0.0118), tensor(1.0428)) Time: 4.0903385281562805 minutes
+Epoch: 100 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0372), tensor(0.0119), tensor(0.9900)) Time: 4.094760596752167 minutes
+Total Time: 7.109467935959498 hours 
+Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0297), tensor(0.0119), tensor(1.0105)) Time: 4.0239415764808655 minutes
+Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0711), tensor(0.0118), tensor(1.0400)) Time: 4.15053874651591 minutes
+Epoch: 20 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0029), tensor(0.0118), tensor(1.0557)) Time: 4.172605756918589 minutes
+Epoch: 30 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.1627), tensor(0.0118), tensor(0.9997)) Time: 4.178433696428935 minutes
+Epoch: 40 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.1549), tensor(0.0118), tensor(0.9980)) Time: 4.174232530593872 minutes
+Epoch: 50 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.1205), tensor(0.0118), tensor(0.9915)) Time: 4.176716530323029 minutes
+Epoch: 60 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0946), tensor(0.0118), tensor(0.9953)) Time: 4.164475699265798 minutes
+Epoch: 70 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0819), tensor(0.0117), tensor(1.0261)) Time: 4.17282159725825 minutes
+Epoch: 80 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.1886), tensor(0.0117), tensor(0.9943)) Time: 4.1651986281077065 minutes
+Epoch: 90 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0464), tensor(0.0118), tensor(0.9385)) Time: 4.173891794681549 minutes
+Epoch: 100 l_PM, l_P, l_MSE, d_penalty 0.0050.0 1.0 0.0 P loss:(JOINT,MSE,NEW) (tensor(6.0892), tensor(0.0117), tensor(0.9729)) Time: 4.177895514170329 minutes
+Total Time: 7.212602299186918 hours 

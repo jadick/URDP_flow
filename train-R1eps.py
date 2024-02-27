@@ -298,7 +298,7 @@ def main():
 
                 opt_ssf.step()
 
-        if ((epoch+1) % 10 == 0) or (epoch == 0):
+        if epoch >= 0: #((epoch+1) % 10 == 0) or (epoch == 0):
             b = time.time()
             show_str= "Epoch: "+ str(epoch+1) + " l_PM, l_P, l_MSE, d_penalty " + str(lambda_PM) + str(lambda_P)+ " " \
                     +str(lambda_MSE) + " " + str(d_penalty) + " P loss: " + str(cal_W1(ssf, encoder, decoder, decoder_hat, discriminator, discriminator_M, test_loader, list_models)) \

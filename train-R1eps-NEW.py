@@ -93,37 +93,34 @@ def cal_W1(ssf, encoder, decoder, decoder_hat, discriminator, discriminator_N, t
                 hx = encoder(x[:,:,0,...])[0]
                 x_ref = decoder(hx).detach()
                 x_1_hat = decoder_hat(hx).detach()
-            #x_ref[x_ref < 0.1] = 0.0
             x_hat = ssf(x_cur, x_ref, x_1_hat)
 
 
             fake_vid = torch.cat((x_1_hat, x_hat), dim = 1).detach()
             real_vid = x[:,0,:2,...].detach() #this looks good!
-            
-            new_metric_vid = torch.cat((real_vid[:,0,:,:].unsqueeze(1), x_hat), dim = 1).detach()
-            new_metric_real_validity = discriminator_N(real_vid)
-            new_metric_fake_validity = discriminator_N(new_metric_vid)
-
             fake_validity = discriminator(fake_vid)
             real_validity = discriminator(real_vid)
 
-            #fake_img = x_hat.detach()
-            #real_img = x[:,0,6:7,...].detach()
-            #fake_valid_m = discriminator_M(fake_img)
-            #real_valid_m = discriminator_M(real_img)
+
+            real_vid_new = torch.cat((x_1_hat, x_cur), dim = 1).detach()
+            new_metric_real_validity = discriminator_N(real_vid_new)
+            new_metric_fake_validity = discriminator_N(fake_vid)
 
             W1_distance.append(torch.sum(real_validity) - torch.sum(fake_validity))
-            #W1M_distance.append(torch.sum(real_valid_m) - torch.sum(fake_valid_m))
             W1N_distance.append(torch.sum(new_metric_real_validity) - torch.sum(new_metric_fake_validity))
             MSE.append(mse_loss(x[:,:,1,:,:], x_hat))
             num_x += len(x)
 
     W1_distance = torch.Tensor(W1_distance)
-    #W1M_distance = torch.Tensor(W1M_distance)
     MSE = torch.Tensor(MSE)
     W1N_distance = torch.Tensor(W1N_distance)
+    
+    finalW1 = W1_distance.sum()/num_x
+    finalW1_N =  W1N_distance.sum()/num_x
+    finalMSE = MSE.sum()/(64*64*num_x)
+    print(finalW1.item(),finalW1_N.item(),finalMSE.item())
 
-    return (W1_distance.sum()/num_x).item(), (MSE.sum()/(64*64*num_x)).item(), (W1N_distance.sum()/num_x).item()
+    return finalW1, finalMSE, finalW1_N
 
 def cal_W1_MMSE(ssf, encoder, decoder, discriminator, discriminator_M, test_loader, list_models):
     mse_loss = nn.MSELoss(reduction='sum')
@@ -155,16 +152,14 @@ def cal_W1_MMSE(ssf, encoder, decoder, discriminator, discriminator_M, test_load
 def main():
     start= time.time()
     args = parser.parse_args()
-    #Params
-    dim = args.dim#128
-    z_dim = args.z_dim #2
-    lambda_gp = args.lambda_gp #50
-    bs = args.bs #64
-    d_penalty = args.d_penalty #0
-    skip_fq = args.skip_fq #10
-    total_epochs = args.total_epochs #200
+    dim = args.dim
+    z_dim = args.z_dim
+    lambda_gp = args.lambda_gp
+    bs = args.bs
+    d_penalty = args.d_penalty
+    skip_fq = args.skip_fq 
+    total_epochs = args.total_epochs
     lambda_P = args.lambda_P*1e-3
-    #lambda_PM = args.lambda_PM*1e-3
     lambda_PN = args.lambda_PN*1e-3
     lambda_MSE = args.lambda_MSE
     L = args.L
@@ -189,15 +184,13 @@ def main():
     f = open('./saved_models/'+ folder_name + "/performance.txt", "a")
 
     #Define Models
-    discriminator = Discriminator_v3(out_ch=2) #Generator Side
-    #discriminator_M = Discriminator_v3(out_ch=1) #Marginal Discriminator
+    discriminator = Discriminator_v3(out_ch=2) #Original joint discriminator
     discriminator_N = Discriminator_v3(out_ch=2) #New metric discriminator
     ssf = ScaleSpaceFlow_R1eps(num_levels=1, dim=z_dim, stochastic=stochastic, quantize_latents=quantize_latents, L=L)
     list_models = [discriminator, discriminator_N, ssf] # add discriminator_N to list
 
     ssf.cuda()
     discriminator.cuda()
-    #discriminator_M.cuda()
     discriminator_N.cuda()
 
     #Load models:
@@ -209,10 +202,9 @@ def main():
         ssf.res_encoder.load_state_dict(torch.load(pre_path+'/r_enc.pth'))
         ssf.res_decoder.load_state_dict(torch.load(pre_path+'/r_dec.pth'))
         discriminator.load_state_dict(torch.load(pre_path+'/discriminator.pth'))
-        #discriminator_M.load_state_dict(torch.load(pre_path+'/discriminator_M.pth'))
         discriminator_N.load_state_dict(torch.load(pre_path+'/discriminator_N.pth'))
     #Define fixed model
-    I_dim = 12 #12 #8
+    I_dim = 12 
     I_L = 2
     encoder = Encoder(dim=I_dim, nc=1, stochastic=True, quantize_latents=True, L=I_L) #Generator Side
     decoder = Decoder_Iframe(dim=I_dim) #Generator Side
@@ -236,7 +228,6 @@ def main():
     #discriminator.train()
     opt_ssf= torch.optim.RMSprop(ssf.parameters(), lr=1e-5)
     opt_d = torch.optim.RMSprop(discriminator.parameters(), lr=5e-5)
-    #opt_dm = torch.optim.RMSprop(discriminator_M.parameters(), lr=5e-5)
     opt_dn = torch.optim.RMSprop(discriminator_N.parameters(), lr=5e-5)
     list_opt = [opt_ssf, opt_d, opt_dn] 
 
@@ -255,8 +246,8 @@ def main():
                 hx = encoder(x[:,:,0,...])[0]
                 x_ref = decoder(hx).detach()
                 x_1_hat = decoder_hat(hx).detach()
-            #x_ref[x_ref < 0.1] = 0.0
-            x_hat = ssf(x_cur, x_ref, x_1_hat)
+                #x_ref[x_ref < 0.1] = 0.0
+                x_hat = ssf(x_cur, x_ref, x_1_hat)
 
 
             #Optimize discriminator
@@ -270,27 +261,16 @@ def main():
             opt_d.step()
 
             ### optimize discriminator_N
-            new_metric_vid = torch.cat((real_vid[:,0,:,:].unsqueeze(1), x_hat), dim = 1).detach()
-            new_metric_fake_validity = discriminator_N(new_metric_vid)
-            new_metric_real_validity = discriminator_N(real_vid)
-            gradient_penalty_N = compute_gradient_penalty(discriminator_N, real_vid.data, new_metric_vid.data)
+            real_vid_new = torch.cat((x_1_hat, x_cur), dim = 1).detach()
+            new_metric_fake_validity = discriminator_N(fake_vid)
+            new_metric_real_validity = discriminator_N(real_vid_new)
+            gradient_penalty_N = compute_gradient_penalty(discriminator_N, real_vid_new.data, fake_vid.data)
             errVDN =  -torch.mean(new_metric_real_validity) + torch.mean(new_metric_fake_validity) + lambda_gp * gradient_penalty_N
             errVDN.backward()
             opt_dn.step()
-            ####
-
-            #Optimize discriminator M
-            #fake_img = x_hat.detach()
-            #real_img = x[:,0,:1,...].detach()
-            #fake_valid_m = discriminator_M(fake_img)
-            #real_valid_m = discriminator_M(real_img)
-            #gradient_penalty_m = compute_gradient_penalty(discriminator_M, fake_img.data, real_img.data)
-            #errID =  -torch.mean(real_valid_m) + torch.mean(fake_valid_m) + lambda_gp * gradient_penalty_m
-            #errID.backward()
-            #opt_dm.step()
+            
 
             if i%skip_fq == 0:
-                x = x.detach() # add x.detach (used for real_vid)
                 x_cur = x_cur.detach()
                 x_ref = x_ref.detach()
                 x_1_hat = x_1_hat.detach()
@@ -300,21 +280,15 @@ def main():
                 fake_validity = discriminator(fake_vid)
                 errVG = -torch.mean(fake_validity)
 
-                real_vid = x[:,0,:2,...].detach() #this looks good!
-                new_metric_vid = torch.cat((real_vid[:,0,:,:].unsqueeze(1), x_hat), dim = 1).detach()
-                new_metric_fake_validity = discriminator_N(new_metric_vid)
-                errVGN = errVG = -torch.mean(new_metric_fake_validity)
-
-                #fake_img = x_hat
-                #fake_validity_im = discriminator_M(fake_img)
-                #errIG = -torch.mean(fake_validity_im)
+                new_metric_fake_validity = discriminator_N(fake_vid)
+                errVGN = -torch.mean(new_metric_fake_validity)
 
                 loss = lambda_MSE*mse(x_hat, x_cur) + lambda_P*errVG + lambda_PN*errVGN ## add new error term errVGN
                 loss.backward()
 
                 opt_ssf.step()
 
-        if ((epoch+1) % 10 == 0) or (epoch == 0):
+        if  ((epoch+1) % 10 == 0) or (epoch == 0):
             b = time.time()
             show_str= "Epoch: "+ str(epoch+1) + " l_PM, l_P, l_MSE, d_penalty " + str(lambda_PN) + str(lambda_P)+ " " \
                     +str(lambda_MSE) + " " + str(d_penalty) + " P loss:(JOINT,MSE,NEW) " \
@@ -329,7 +303,6 @@ def main():
             torch.save(ssf.res_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_enc.pth'))
             torch.save(ssf.res_decoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_dec.pth' ))
             torch.save(discriminator.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator.pth'))
-            #torch.save(discriminator_M.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator_M.pth'))
             torch.save(discriminator_N.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator_N.pth'))
     
     end = time.time()
@@ -340,7 +313,6 @@ def main():
     torch.save(ssf.res_encoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_enc.pth'))
     torch.save(ssf.res_decoder.state_dict(), os.path.join("./saved_models/" + folder_name, 'r_dec.pth' ))
     torch.save(discriminator.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator.pth'))
-    #torch.save(discriminator_M.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator_M.pth'))
     torch.save(discriminator_N.state_dict(), os.path.join("./saved_models/" + folder_name, 'discriminator_N.pth'))
     f.write(f'Total Time: {(end-start)/3600} hours \n')
     f.close()
