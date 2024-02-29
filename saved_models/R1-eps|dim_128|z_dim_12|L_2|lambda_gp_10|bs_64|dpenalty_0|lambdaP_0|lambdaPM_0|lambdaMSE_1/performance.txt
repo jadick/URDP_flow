@@ -1,6 +1,0 @@
-Epoch: 0 | l_PN, l_P, l_MSE, d_penalty 0 0 1 0 | Eval loss (joint,mse,new): (196.01712036132812, 0.7784674167633057, 220.65614318847656))
-Epoch: 1 | l_PN, l_P, l_MSE, d_penalty 0 0 1 0 | Eval loss (joint,mse,new): (207.41458129882812, 0.7794222235679626, 201.96961975097656))
-Epoch: 2 | l_PN, l_P, l_MSE, d_penalty 0 0 1 0 | Eval loss (joint,mse,new): (236.35708618164062, 0.7865485548973083, 217.5904541015625))
-Epoch: 0 | l_PN, l_P, l_MSE, d_penalty 0 0 1 0 | Eval loss (joint,mse,new): (9.919418334960938, 0.01821175403892994, 9.594084739685059))
-Epoch: 1 | l_PN, l_P, l_MSE, d_penalty 0 0 1 0 | Eval loss (joint,mse,new): (8.470149040222168, 0.014201587066054344, 8.140633583068848))
-Epoch: 2 | l_PN, l_P, l_MSE, d_penalty 0 0 1 0 | Eval loss (joint,mse,new): (7.804651260375977, 0.013481728732585907, 7.554715156555176))
