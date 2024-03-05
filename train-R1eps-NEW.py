@@ -20,7 +20,7 @@ cuda = True
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
 import argparse
-
+# test
 
 parser = argparse.ArgumentParser('training config')
 parser.add_argument('--total_epochs', type = int, default = 100, help = 'Number of training epochs')

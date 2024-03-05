@@ -16,11 +16,11 @@ module load pytorch2.0-cuda11.8-python3.9
 #pytorch1.13-cuda11.7-python3.7
 
 
-python train-R1eps-NEW.py --total_epochs 80 \
-				--lambda_P 0 \
+python train-R1eps-FAST.py --total_epochs 100 \
+				--lambda_JD 0 \
 				--lambda_MSE 1 \
-				--lambda_PN 0 \
-				--lambda_PM $1 \
+				--lambda_NEW 0 \
+				--lambda_FMD $1 \
 				--lambda_gp 10 \
 				--bs 64 \
 				--skip_fq 5 \
@@ -28,11 +28,9 @@ python train-R1eps-NEW.py --total_epochs 80 \
 				--z_dim 6\
 				--L 2 \
 				--d_penalty 0 \
-				--pre_path './saved_models/12/R1-eps|dim_128|z_dim_6|L_2|lambda_gp_10|bs_64|dpenalty_0.0|lambdaP_0.0|lambdaPM_$2|lambdaPN_0.0|lambdaMSE_1.0'\
+				--pre_path './saved_models/12/R1-eps|dim_128|z_dim_6|L_2|lambdaJD_0.0|lambdaFMD_0.0|lambdaNEW_0.0|lambdaMSE_1.0'\
 				--path './data/' 
 
-#'./saved_models/R1-eps|_dim_128|z_dim_4|L_2|lambda_gp_10|bs_64|dpenalty_0.0|lambdaP_0.0|lambdaPM_0.0|lambdaMSE_1.0' \
-#'./saved_models/R1-eps|_dim_128|z_dim_12|L_2|lambda_gp_10|bs_64|dpenalty_0.0|lambdaP_0.0|lambdaPN_0.0|lambdaMSE_1.0'
-#'R1-eps|dim_128|z_dim_1|L_2|lambda_gp_10|bs_64|dpenalty_0.0|lambdaP_0.0|lambdaPM_0.0|lambdaPN_0.0|lambdaMSE_1.0'
+#'./saved_models/12/R1-eps|dim_128|z_dim_6|L_2|lambdaJD_0.0|lambdaFMD_0.0|lambdaNEW_0.0|lambdaMSE_1.0'\
 
 EOF
