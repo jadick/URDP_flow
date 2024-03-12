@@ -1,5 +1,0 @@
-Epoch: 1 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(7.1012), tensor(7.1282), tensor(0.0131)) Time: 3.4757537047068277 minutes
-Epoch: 10 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(7.1616), tensor(7.3642), tensor(0.0129)) Time: 3.559672764937083 minutes
-Epoch: 20 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.8751), tensor(7.1601), tensor(0.0128)) Time: 3.5555760622024537 minutes
-Epoch: 30 l_PM, l_P, l_MSE, d_penalty 0.00.0 1.0 0.0 P loss: (tensor(6.8584), tensor(6.8561), tensor(0.0128)) Time: 3.5627615332603453 minutes
-Total Time: 1.8679599283801185 hours 
