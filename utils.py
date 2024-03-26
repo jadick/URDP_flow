@@ -20,6 +20,8 @@ from torchvision.transforms import transforms
 from torch.optim.lr_scheduler import StepLR
 import torch.utils.data as data
 
+from moving_mnist import MovingMNIST, MovingMNIST_custom_step
+
 def free_params(module: nn.Module):
     for p in module.parameters():
         p.requires_grad = True
@@ -460,9 +462,8 @@ def calculate_rate(mode, latent_dim_1, L_1, latent_dim_2=-1, L_2=-1, latent_dim_
 
     return n_bits
 
-def get_dataloader(dataset='mmnist', data_root='/tmp/', seq_len=20, image_size=64, num_digits=2, batch_size=16):
+def get_dataloader(dataset='mmnist', data_root='/tmp/', seq_len=20, image_size=64, num_digits=2, batch_size=16, step =10):
     if dataset == 'mmnist':
-        from moving_mnist import MovingMNIST
         train_data = MovingMNIST(
                         train=True,
                         data_root=data_root,
@@ -491,6 +492,38 @@ def get_dataloader(dataset='mmnist', data_root='/tmp/', seq_len=20, image_size=6
                                   batch_size=batch_size,
                                   shuffle=True,
                                   drop_last=True)
+        
+    elif dataset == 'mmnist_custom_step':
+        train_data = MovingMNIST_custom_step(
+                        train=True,
+                        data_root=data_root,
+                        seq_len=seq_len,
+                        image_size=image_size,
+                        deterministic=False,
+                        num_digits=num_digits,
+                        step=step)
+        test_data = MovingMNIST_custom_step(
+                        train=False,
+                        data_root=data_root,
+                        seq_len=seq_len,
+                        image_size=image_size,
+                        deterministic=False,
+                        num_digits=num_digits,
+                        step=step)
+
+        print ('Finished Loading MovingMNIST_l_custom_step!')
+        train_loader = data.DataLoader(train_data,
+                                  num_workers=8,
+                                  batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=True,
+                                  pin_memory=True)
+
+        test_loader = data.DataLoader(train_data,
+                                  num_workers=8,
+                                  batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=True)
     elif dataset == 'kth':
         from kth import KTH
         train_data = KTH(
@@ -504,7 +537,7 @@ def get_dataloader(dataset='mmnist', data_root='/tmp/', seq_len=20, image_size=6
                         seq_len=seq_len,
                         image_size=image_size)
 
-        print ('Finished Loading MNIST!')
+        print ('Finished Loading kth!')
         train_loader = data.DataLoader(train_data,
                                   num_workers=8,
                                   batch_size=batch_size,

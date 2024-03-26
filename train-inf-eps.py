@@ -27,7 +27,7 @@ parser.add_argument('--total_epochs', type = int, default = 100, help = 'Number 
 parser.add_argument('--lambda_gp', type = int, default = 10, help = 'Gradient penalty')
 parser.add_argument('--bs', type = int, default = 64, help = 'batch size')
 parser.add_argument('--dim', type = int, default = 128, help = 'Common dimension')
-parser.add_argument('--z_dim', type = int, default = 1, help = 'Z dimension')
+parser.add_argument('--eps', type = int, default = 2, help = 'second frame bitrate')
 parser.add_argument('--L', type = int, default = 2, help = 'Quantization parameter')
 parser.add_argument('--skip_fq', type = int, default=5, help = 'Loop frequency for WGAN')
 parser.add_argument('--d_penalty', type = float, default = 0.0, help = 'Diversity penalty')
@@ -37,6 +37,8 @@ parser.add_argument('--lambda_NEW', type = float, default = 0.0, help = 'New per
 parser.add_argument('--lambda_FMD', type = float, default = 0.0, help = 'Marginal perceptual penalty')
 parser.add_argument('--path', type = str, default = './data/', help = 'Data path')
 parser.add_argument('--pre_path', type = str, default = './fixed_models/', help ='Path to pretrained weights')
+parser.add_argument('--single_bit', type=int, default=0)
+parser.add_argument('--step', type=int, default=15, help ='step size for mmnist')
 
 def set_models_state(list_models, state, FMD, JD, NEW):
     if state =='train':
@@ -71,14 +73,15 @@ def compute_gradient_penalty(D, real_samples, fake_samples):
         only_inputs=True,
     )[0]
     gradients = gradients.view(gradients.size(0), -1)
+    #gradients = gradients.reshape(gradients.size(0), -1)
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
 
-def cal_W1(ssf, encoder, decoder, decoder_hat, discriminator_JD, discriminator_NEW, discriminator_FMD, test_loader, list_models, FMD, JD, NEW):
+def cal_W1(ssf, discriminator_JD, discriminator_NEW, discriminator_FMD, test_loader, list_models, FMD, JD, NEW):
     mse_loss = nn.MSELoss(reduction = 'sum')
     mse_avg = nn.MSELoss()
     set_models_state(list_models, 'eval', FMD, JD, NEW)
-
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     JD_distance = [] if JD else None
     NEW_distance = [] if NEW else None
     FMD_distance = [] if FMD else None
@@ -88,41 +91,37 @@ def cal_W1(ssf, encoder, decoder, decoder_hat, discriminator_JD, discriminator_N
     for i, x in enumerate(iter(test_loader)):
         with torch.no_grad():
             #Get the data
-            x = x.permute(0, 4, 1, 2, 3)
-            x = x.cuda().float()
-            x_cur = x[:,:,1,...]
-            with torch.no_grad():
-                hx = encoder(x[:,:,0,...])[0]
-                x_ref = decoder(hx).detach()
-                x_1_hat = decoder_hat(hx).detach()
-            x_hat = ssf(x_cur, x_ref, x_1_hat)
+            x = x.permute(0, 4, 1, 2, 3).to(device).float()
+            x0 = x[:,:,0,...]
+            x1 = x[:,:,1,...]
+            x1_hat = ssf(x1, x0)
 
             if JD:
-                fake_vid = torch.cat((x_1_hat, x_hat), dim = 1).detach()
-                real_vid = x[:,0,:2,...].detach() 
-                fake_validity = discriminator_JD(fake_vid)
-                real_validity = discriminator_JD(real_vid)
+                fake_vid_JD = torch.cat((x0, x1_hat), dim = 1).detach()
+                real_vid_JD = torch.cat((x0, x1), dim = 1).detach()
+                fake_validity_JD = discriminator_JD(fake_vid_JD) 
+                real_validity_JD = discriminator_JD(real_vid_JD)
                 
             if NEW:
-                fake_vid = torch.cat((x_1_hat, x_hat), dim = 1).detach()
-                real_vid_new = torch.cat((x_1_hat, x_cur), dim = 1).detach()
-                new_metric_real_validity = discriminator_NEW(real_vid_new)
-                new_metric_fake_validity = discriminator_NEW(fake_vid)
+                fake_vid_NEW = torch.cat((x0, x1_hat), dim = 1).detach()
+                real_vid_NEW = torch.cat((x0, x1), dim = 1).detach()
+                fake_validity_NEW = discriminator_NEW(fake_vid_NEW)
+                real_validity_NEW = discriminator_NEW(real_vid_NEW)
                 
             if FMD:
-                fake_img = x_hat.detach()
-                real_img = x[:,0,6:7,...].detach()
-                fake_valid_m = discriminator_FMD(fake_img)
-                real_valid_m = discriminator_FMD(real_img)
+                fake_img = x1_hat.detach()
+                real_img = x1.detach()
+                fake_validity_FMD = discriminator_FMD(fake_img)
+                real_validity_FMD = discriminator_FMD(real_img) 
                 
             if JD:
-                JD_distance.append(torch.sum(real_validity) - torch.sum(fake_validity))
+                JD_distance.append(torch.sum(real_validity_JD) - torch.sum(fake_validity_JD))
             if NEW:
-                NEW_distance.append(torch.sum(new_metric_real_validity) - torch.sum(new_metric_fake_validity))
+                NEW_distance.append(torch.sum(real_validity_NEW) - torch.sum(fake_validity_NEW))
             if FMD:
-                FMD_distance.append(torch.sum(real_valid_m) - torch.sum(fake_valid_m))
+                FMD_distance.append(torch.sum(real_validity_FMD) - torch.sum(fake_validity_FMD))
                 
-            MSE.append(mse_loss(x[:,:,1,:,:], x_hat))
+            MSE.append(mse_loss(x1, x1_hat))
             num_x += len(x)
 
     JD_distance = torch.Tensor(JD_distance).sum() / num_x if JD else torch.tensor([0])
@@ -135,8 +134,9 @@ def cal_W1(ssf, encoder, decoder, decoder_hat, discriminator_JD, discriminator_N
 def main():
     start = time.time()
     args = parser.parse_args()
+    eps = args.eps
+    z_dim = eps//2
     dim = args.dim
-    z_dim = args.z_dim
     lambda_gp = args.lambda_gp
     bs = args.bs
     d_penalty = args.d_penalty
@@ -149,18 +149,19 @@ def main():
     L = args.L
     path = args.path
     pre_path = args.pre_path
-    bit_rate = (z_dim * 2 * np.log2(L)).astype(int)
+    single_bit = bool(args.single_bit)
+    step= args.step
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    # we check what is metric used for training (FMD,JD,NEW,MSE)
-    # if only one flag is true, we train only the discriminator for the chosen metric
-    FMD = lambda_FMD > 0
-    JD = lambda_JD > 0
-    NEW = lambda_NEW > 0
-    # if all flags are == 0, we pretrain all discriminators for MSE only 
-    FMD = JD = NEW = (lambda_FMD == 0 and lambda_JD == 0 and lambda_NEW == 0) 
 
-    #No quantization:
+    #set perceptual flags
+    if (lambda_FMD == 0 and lambda_JD == 0 and lambda_NEW == 0): 
+        FMD = JD = NEW = True
+    else:
+        FMD = lambda_FMD > 0
+        JD = lambda_JD > 0
+        NEW = lambda_NEW > 0
+        
+    #set stoch/quant:
     stochastic = True
     quantize_latents = True
     if L == -1:
@@ -168,23 +169,24 @@ def main():
         quantize_latents = False
     
     #Create folder:
-    folder_name = f'{bit_rate}/R1-eps|dim_{dim}|z_dim_{z_dim}|L_{L}|lambdaJD_{lambda_JD}|'\
+    folder_name = f'inf-eps/step_{step}/inf-{eps}|lambdaJD_{lambda_JD}|'\
     + f'lambdaFMD_{lambda_FMD}|lambdaNEW_{lambda_NEW}|lambdaMSE_{lambda_MSE}'
     print ("Settings: ", folder_name)
 
     os.makedirs('./saved_models/'+ folder_name, exist_ok=True)
     f = open('./saved_models/'+ folder_name + "/performance.txt", "a")
     print_str = f'l_NEW: {lambda_NEW}, l_JD : {lambda_JD}, l_FMD: {lambda_FMD},'\
-                + f' l_MSE: {lambda_MSE}, d_penalty: {d_penalty}, L: {L}, z_dim: {z_dim}, bs: {bs}\n'
+            + f' l_MSE: {lambda_MSE}, d_penalty: {d_penalty},step:{step}, L: {L}, z_dim: {z_dim}, bs: {bs}'\
+            + f', bit_rate: {eps}, s_b: {single_bit}\n'
     f.write(print_str)
     f.write('| EPOCH |      PLF-JD     |      PLF-FMD    |      PLF-NEW    |      MSE        |\n')
     f.close()
 
     #Define Models
-    discriminator_JD = Discriminator_v3(out_ch=2).to(device) if JD else None
-    discriminator_NEW = Discriminator_v3(out_ch=2).to(device) if NEW else None
+    discriminator_JD = Discriminator_v3(out_ch=2).to(device) if JD else None #
+    discriminator_NEW = Discriminator_v3(out_ch=2).to(device) if NEW else None #
     discriminator_FMD = Discriminator_v3(out_ch=1).to(device) if FMD else None
-    ssf = ScaleSpaceFlow_R1eps(num_levels=1, dim=z_dim, stochastic=stochastic, quantize_latents=quantize_latents, L=L).to(device)
+    ssf = ScaleSpaceFlow(num_levels=1, dim=z_dim, stochastic=True, quantize_latents=True, L=L,single_bit=single_bit).to(device)
     list_models = [discriminator_JD, discriminator_NEW, discriminator_FMD, ssf] 
 
     #Load models:
@@ -195,26 +197,17 @@ def main():
         ssf.P_encoder.load_state_dict(torch.load(pre_path + '/p_enc.pth'))
         ssf.res_encoder.load_state_dict(torch.load(pre_path + '/r_enc.pth'))
         ssf.res_decoder.load_state_dict(torch.load(pre_path + '/r_dec.pth'))
+        
         if JD:
             discriminator_JD.load_state_dict(torch.load(pre_path + '/discriminator_JD.pth'))
         if NEW:
             discriminator_NEW.load_state_dict(torch.load(pre_path + '/discriminator_NEW.pth'))
         if FMD:
             discriminator_FMD.load_state_dict(torch.load(pre_path + '/discriminator_FMD.pth'))
-            
-    #Define fixed model
-    I_dim = 12 
-    I_L = 2
-    encoder = Encoder(dim=I_dim, nc=1, stochastic=True, quantize_latents=True, L=I_L).to(device).eval()
-    decoder = Decoder_Iframe(dim=I_dim).to(device).eval()
-    decoder_hat = Decoder_Iframe(dim=I_dim).to(device).eval()
-
-    encoder.load_state_dict(torch.load('./I3/I_frame_encoder_zdim_12_L_2.pth'))
-    decoder.load_state_dict(torch.load('./I3/I_frame_decoderMMSE_zdim_12_L_2.pth'))
-    decoder_hat.load_state_dict(torch.load('./I3/I_frame_decoder_zdim_12_L_2.pth'))
+  
 
     #Define Data Loader
-    train_loader, test_loader = get_dataloader(data_root=path, seq_len=8, batch_size=bs, num_digits=1)
+    train_loader, test_loader = get_dataloader(dataset='mmnist_custom_step',data_root=path, seq_len=3, batch_size=bs, num_digits=1,step=step)
     mse = torch.nn.MSELoss()
 
     #Define optimizers
@@ -230,86 +223,80 @@ def main():
         for i,x in enumerate(iter(train_loader)):
             #Set 0 gradient
             set_opt_zero(list_opt, FMD, JD, NEW)
-
             #Get the data
-            x = x.permute(0, 4, 1, 2, 3)
-            x = x.cuda().float()
-            x_cur = x[:,:,1,...]
+            x = x.permute(0, 4, 1, 2, 3).to(device).float()
+            x0 = x[:,:,0,...]
+            x1 = x[:,:,1,...]
             with torch.no_grad():
-                hx = encoder(x[:,:,0,...])[0]
-                x_ref = decoder(hx).detach()
-                x_1_hat = decoder_hat(hx).detach()
-                x_hat = ssf(x_cur, x_ref, x_1_hat)
-
+                x1_hat = ssf(x1, x0) 
+                
             # optimize discriminator_JD
             if JD:
-                fake_vid = torch.cat((x_1_hat, x_hat), dim = 1)
-                real_vid = x[:,0,:2,...].detach() 
-                JD_fake_validity = discriminator_JD(fake_vid.detach())
-                JD_real_validity = discriminator_JD(real_vid)
-                gradient_penalty = compute_gradient_penalty(discriminator_JD, real_vid.data, fake_vid.data)
-                errJD =  -torch.mean(JD_real_validity) + torch.mean(JD_fake_validity) + lambda_gp * gradient_penalty
+                fake_vid_JD = torch.cat((x0, x1_hat), dim = 1).detach()
+                real_vid_JD = x[:,0,:2,...].detach() 
+                fake_validity_JD = discriminator_JD(fake_vid_JD)
+                real_validity_JD = discriminator_JD(real_vid_JD)
+                gp_JD = compute_gradient_penalty(discriminator_JD, real_vid_JD.data, fake_vid_JD.data)
+                errJD =  -torch.mean(real_validity_JD) + torch.mean(fake_validity_JD) + lambda_gp * gp_JD
                 errJD.backward()
                 opt_JD.step()
 
             # optimize discriminator_NEW
             if NEW:
-                fake_vid = torch.cat((x_1_hat, x_hat), dim = 1)
-                real_vid_NEW = torch.cat((x_1_hat, x_cur), dim = 1).detach()
-                NEW_fake_validity = discriminator_NEW(fake_vid)
-                NEW_real_validity = discriminator_NEW(real_vid_NEW)
-                gradient_penalty_NEW = compute_gradient_penalty(discriminator_NEW, real_vid_NEW.data, fake_vid.data)
-                errNEW =  -torch.mean(NEW_real_validity) + torch.mean(NEW_fake_validity) + lambda_gp * gradient_penalty_NEW
+                fake_vid_NEW = torch.cat((x0, x1_hat), dim = 1).detach()
+                real_vid_NEW = x[:,0,:2,...].detach()
+                fake_validity_NEW = discriminator_NEW(fake_vid_NEW)
+                real_validity_NEW = discriminator_NEW(real_vid_NEW)
+                gp_NEW = compute_gradient_penalty(discriminator_NEW, real_vid_NEW.data, fake_vid_NEW.data)
+                errNEW =  -torch.mean(real_validity_NEW) + torch.mean(fake_validity_NEW) + lambda_gp * gp_NEW
                 errNEW.backward()
                 opt_NEW.step()
 
             # optimize discriminator_FMD
             if FMD:
-                fake_img = x_hat.detach()
-                real_img = x[:,0,:1,...].detach()
-                FMD_fake_validity = discriminator_FMD(fake_img)
-                FMD_real_validity = discriminator_FMD(real_img)
-                gradient_penalty_FMD = compute_gradient_penalty(discriminator_FMD, fake_img.data, real_img.data)
-                errFMD =  -torch.mean(FMD_real_validity) + torch.mean(FMD_fake_validity) + lambda_gp * gradient_penalty_FMD
+                fake_img = x1_hat.detach()
+                real_img = x1.detach()
+                fake_validity_FMD = discriminator_FMD(fake_img)
+                real_validity_FMD = discriminator_FMD(real_img)
+                gp_FMD = compute_gradient_penalty(discriminator_FMD, fake_img.data, real_img.data)
+                errFMD =  -torch.mean(real_validity_FMD) + torch.mean(fake_validity_FMD) + lambda_gp * gp_FMD
                 errFMD.backward()
                 opt_FMD.step()
             
 
             if i%skip_fq == 0:
-                x_cur = x_cur.detach()
-                x_ref = x_ref.detach()
-                x_1_hat = x_1_hat.detach()
-                x_hat = ssf(x_cur, x_ref, x_1_hat)
+                x0 = x0.detach()
+                x1 = x1.detach()
+                x1_hat = ssf(x1, x0)
                 
                 if JD:
-                    fake_vid = torch.cat((x_1_hat, x_hat), dim = 1)
-                    fake_validity_JD = discriminator_JD(fake_vid)
+                    fake_vid_JD = torch.cat((x0, x1_hat), dim = 1)
+                    fake_validity_JD = discriminator_JD(fake_vid_JD)
                     errJD_ = -torch.mean(fake_validity_JD)
                 else:
                     errJD_ = 0
                     
                 if NEW:
-                    fake_vid = torch.cat((x_1_hat, x_hat), dim = 1)
-                    fake_validity_NEW = discriminator_NEW(fake_vid)
+                    fake_vid_NEW = torch.cat((x0, x1_hat), dim = 1)
+                    fake_validity_NEW = discriminator_NEW(fake_vid_NEW)
                     errNEW_ = -torch.mean(fake_validity_NEW)
                 else:
                     errNEW_ = 0
                     
                 if FMD:
-                    fake_img = x_hat
-                    fake_validity_im = discriminator_FMD(fake_img)
-                    errFMD_ = -torch.mean(fake_validity_im)
+                    fake_img = x1_hat
+                    fake_validity_FMD = discriminator_FMD(fake_img)
+                    errFMD_ = -torch.mean(fake_validity_FMD)
                 else:
                     errFMD_ = 0
 
-                loss = lambda_MSE*mse(x_hat, x_cur) + lambda_JD*errJD_ + lambda_NEW*errNEW_ + lambda_FMD*errFMD_
+                loss = lambda_MSE*mse(x1_hat, x1) + lambda_JD*errJD_ + lambda_NEW*errNEW_ + lambda_FMD*errFMD_
                 loss.backward()
                 opt_ssf.step()
-
-        
+            
         if ((epoch+1) % 10 == 0) or epoch == 0:
             f = open('./saved_models/'+ folder_name + "/performance.txt", "a")
-            JD_loss, MSE_loss, NEW_loss, FMD_loss = cal_W1(ssf, encoder, decoder, decoder_hat, discriminator_JD, discriminator_NEW, discriminator_FMD, test_loader, list_models, FMD, JD, NEW)
+            JD_loss, MSE_loss, NEW_loss, FMD_loss = cal_W1(ssf, discriminator_JD, discriminator_NEW, discriminator_FMD, test_loader, list_models, FMD, JD, NEW)
             show_str = f'   {epoch+1}   {JD_loss.item()} {FMD_loss.item()} {NEW_loss.item()} {MSE_loss.item()}'
             f.write(show_str + "\n")
             f.close()
