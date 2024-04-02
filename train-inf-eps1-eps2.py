@@ -238,7 +238,7 @@ def main():
     list_opt = [opt_ssf1, opt_ssf2, opt_JD, opt_NEW, opt_FMD] 
 
     for epoch in range(total_epochs):
-        print(epoch)
+        #print(epoch,lambda_NEW)
         a = time.time()
         set_models_state(list_models, 'train', FMD, JD, NEW)
         for i,x in enumerate(iter(train_loader)):
@@ -304,7 +304,7 @@ def main():
                     errJD_ = 0
                     
                 if NEW:
-                    fake_vid_NEW = torch.cat((x0, x1_hat, x2_hat), dim = 1).detach()
+                    fake_vid_NEW = torch.cat((x0, x1_hat, x2_hat), dim = 1)
                     fake_validity_NEW = discriminator_NEW(fake_vid_NEW)
                     errNEW_ = -torch.mean(fake_validity_NEW)
                 else:
