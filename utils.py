@@ -552,16 +552,16 @@ def get_dataloader(dataset='mmnist', data_root='/tmp/', seq_len=20, image_size=6
                                   shuffle=True,
                                   drop_last=True)
         
-    elif dataset == 'mmnist_unidir_axis':
+    elif dataset == 'mmnist_unidir_4_axis_centered':
             
-        train_data = MovingMNIST_unidir_axis(
+        train_data = MovingMNIST_unidir_4_axis_centered(
                         train=True,
                         data_root=data_root,
                         seq_len=seq_len,
                         image_size=image_size,
                         num_digits=num_digits,
                                   step = step)
-        test_data = MovingMNIST_unidir_axis(
+        test_data = MovingMNIST_unidir_4_axis_centered(
                         train=False,
                         data_root=data_root,
                         seq_len=seq_len,
@@ -569,7 +569,72 @@ def get_dataloader(dataset='mmnist', data_root='/tmp/', seq_len=20, image_size=6
                         num_digits=num_digits,
                                   step = step)
 
-        print ('Finished Loading MovingMNIST_unidir_axis!')
+        print ('Finished Loading MovingMNIST_unidir_4_axis_centered!')
+        
+        train_loader = data.DataLoader(train_data,
+                                  num_workers=8,
+                                  batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=True,
+                                  pin_memory=True)
+
+        test_loader = data.DataLoader(train_data,
+                                  num_workers=8,
+                                  batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=True)
+        
+    elif dataset == 'mmnist_unidir_4_axis_random':
+            
+        train_data = MovingMNIST_unidir_4_axis_random(
+                        train=True,
+                        data_root=data_root,
+                        seq_len=seq_len,
+                        image_size=image_size,
+                        num_digits=num_digits,
+                                  step = step)
+        test_data = MovingMNIST_unidir_4_axis_random(
+                        train=False,
+                        data_root=data_root,
+                        seq_len=seq_len,
+                        image_size=image_size,
+                        num_digits=num_digits,
+                                  step = step)
+
+        print ('Finished Loading MovingMNIST_unidir_4_axis_random!')
+        
+        train_loader = data.DataLoader(train_data,
+                                  num_workers=8,
+                                  batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=True,
+                                  pin_memory=True)
+
+        test_loader = data.DataLoader(train_data,
+                                  num_workers=8,
+                                  batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=True)
+        
+    elif dataset == 'mmnist_unidir_2_axis':
+            
+        train_data = MovingMNIST_unidir_2_axis(
+                        train=True,
+                        data_root=data_root,
+                        seq_len=seq_len,
+                        image_size=image_size,
+                        num_digits=num_digits,
+                                  step = step)
+        test_data = MovingMNIST_unidir_2_axis(
+                        train=False,
+                        data_root=data_root,
+                        seq_len=seq_len,
+                        image_size=image_size,
+                        num_digits=num_digits,
+                                  step = step)
+
+        print ('Finished Loading MovingMNIST_unidir_2_axis!')
+        
         train_loader = data.DataLoader(train_data,
                                   num_workers=8,
                                   batch_size=batch_size,

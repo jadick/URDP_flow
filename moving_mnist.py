@@ -341,17 +341,15 @@ class MovingMNIST_unidir_axis(object):
         return x
 '''    
     
-    
-    
-    
-    
-        
-class MovingMNIST_unidir_axis(object):
+class MovingMNIST_unidir_2_axis(object):
 
-    """Data Handler that creates uniderectional MNIST dataset on the fly."""
-    '''         Each video contains motion in only one direction         '''
-
-    def __init__(self, train, data_root, seq_len=3, num_digits=1, image_size=64, step = [24,6]):
+    """
+    Data Handler that creates uniderectional MNIST dataset on the fly.
+    Each video contains motion in only one direction         
+    Digits starting centered                     
+    Moving in 2 axis 
+    """
+    def __init__(self, train, data_root, seq_len=3, num_digits=1, image_size=64, step = [11, 5]):
         path = data_root
         self.seq_len = seq_len
         self.num_digits = num_digits
@@ -377,18 +375,7 @@ class MovingMNIST_unidir_axis(object):
             np.random.seed(seed)
             
     def set_initial_position(self, direction):
-        if direction == 'up':
-            sx = self.digit_size - self.digit_size//2
-            sy = 0
-        elif direction == 'down':
-            sx = self.digit_size - self.digit_size//2
-            sy = self.image_size - self.digit_size
-        if direction == 'left':
-            sx = self.image_size - self.digit_size 
-            sy = self.digit_size - self.digit_size//2
-        elif direction == 'right':
-            sx = 0
-            sy = self.digit_size - self.digit_size//2
+        sx = sy = (self.image_size - self.digit_size) // 2
         return sx, sy
 
     def __len__(self):
@@ -412,7 +399,7 @@ class MovingMNIST_unidir_axis(object):
             #sample direction
             direction = np.random.choice(self.directions)
             
-            #select initial location absed on direction
+            #select initial location based on direction
             sx, sy = self.set_initial_position(direction)
             
             #place digit at selected initial location
@@ -429,19 +416,214 @@ class MovingMNIST_unidir_axis(object):
                     x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 1)
                 elif direction == 'left':
                     x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 1)
-            x[x>1] = 1.
+            #x[x>1] = 1.
+        return x    
+    
+    
+    
+        
+class MovingMNIST_unidir_4_axis_centered(object):
+
+    """
+    Data Handler that creates uniderectional MNIST dataset on the fly.
+    Each video contains motion in only one direction         
+    Digits starting centered                     
+    Moving in 4 axis 
+    """
+    def __init__(self, train, data_root, seq_len=3, num_digits=1, image_size=64, step = [11, 5]):
+        path = data_root
+        self.seq_len = seq_len
+        self.num_digits = num_digits
+        self.image_size = image_size
+        self.step_length = 0.1
+        self.digit_size = int(image_size / 2)
+        self.seed_is_set = False 
+        self.channels = 1
+        self.steps = step
+        self.directions = ['up', 'down', 'left', 'right','up-right','up-left', 'down-right','down-left']
+        self.data = datasets.MNIST(
+                    path,
+                    train=train,
+                    download=True,
+                    transform=transforms.Compose(
+                    [transforms.Resize(self.digit_size),
+                     transforms.ToTensor()]))
+        self.N = len(self.data)
+
+    def set_seed(self, seed):
+        if not self.seed_is_set:
+            self.seed_is_set = True
+            np.random.seed(seed)
+            
+    def set_initial_position(self, direction):
+        sx = sy = (self.image_size - self.digit_size) // 2
+        return sx, sy
+
+    def __len__(self):
+        return self.N
+
+    def __getitem__(self, index):
+        self.set_seed(index)
+        image_size = self.image_size
+        digit_size = self.digit_size
+        x = np.zeros((self.seq_len,
+                      image_size,
+                      image_size,
+                      self.channels),
+                    dtype=np.float32)
+
+        for n in range(self.num_digits):
+            idx = np.random.randint(self.N)
+            digit, _ = self.data[idx]
+            digit_steps = self.steps[:]
+            
+            #sample direction
+            direction = np.random.choice(self.directions)
+            
+            #select initial location based on direction
+            sx, sy = self.set_initial_position(direction)
+            
+            #place digit at selected initial location
+            x[0, sy:sy+self.digit_size, sx:sx+self.digit_size, 0] += digit.numpy().squeeze()
+            
+            for t in range(1, self.seq_len):
+                np.random.shuffle(digit_steps)
+                step = digit_steps.pop()
+                if direction == 'up':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 0)
+                    x[t, :step, :, 0] = 0
+                elif direction == 'down':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 0)
+                    x[t, -step:, :, 0] = 0
+                elif direction == 'right':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 1)
+                    x[t, :, :step, 0] = 0
+                elif direction == 'left':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 1)
+                    x[t, :, -step:, 0] = 0
+                elif direction == 'up-right':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], step , axis = 1)
+                    x[t, :step, :, 0] = 0
+                    x[t, :, :step, 0] = 0
+                elif direction == 'up-left':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], -step , axis = 1)
+                    x[t, :step, :, 0] = 0
+                    x[t, :, -step:, 0] = 0
+                elif direction == 'down-right':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], step , axis = 1)
+                    x[t, -step:, :, 0] = 0
+                    x[t, :, :step, 0] = 0
+                elif direction == 'down-left':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], -step , axis = 1)
+                    x[t, -step:, :, 0] = 0
+                    x[t, :, -step:, 0] = 0
         return x
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+class MovingMNIST_unidir_4_axis_random(object):
+
+    """
+    Data Handler that creates uniderectional MNIST dataset on the fly.
+    Each video contains motion in only one direction         
+    Digits starting centered                     
+    Moving in 4 axis 
+    """
+    def __init__(self, train, data_root, seq_len=3, num_digits=1, image_size=64, step = [11, 5]):
+        path = data_root
+        self.seq_len = seq_len
+        self.num_digits = num_digits
+        self.image_size = image_size
+        self.step_length = 0.1
+        self.digit_size = int(image_size / 2)
+        self.seed_is_set = False 
+        self.channels = 1
+        self.steps = step
+        self.directions = ['up', 'down', 'left', 'right','up-right','up-left', 'down-right','down-left']
+        self.data = datasets.MNIST(
+                    path,
+                    train=train,
+                    download=True,
+                    transform=transforms.Compose(
+                    [transforms.Resize(self.digit_size),
+                     transforms.ToTensor()]))
+        self.N = len(self.data)
+
+    def set_seed(self, seed):
+        if not self.seed_is_set:
+            self.seed_is_set = True
+            np.random.seed(seed)
+            
+    def set_initial_position(self, direction):
+        sx = np.random.randint(self.image_size-self.digit_size)
+        sy = np.random.randint(self.image_size-self.digit_size)
+        return sx, sy
+
+    def __len__(self):
+        return self.N
+
+    def __getitem__(self, index):
+        self.set_seed(index)
+        image_size = self.image_size
+        digit_size = self.digit_size
+        x = np.zeros((self.seq_len,
+                      image_size,
+                      image_size,
+                      self.channels),
+                    dtype=np.float32)
+
+        for n in range(self.num_digits):
+            idx = np.random.randint(self.N)
+            digit, _ = self.data[idx]
+            digit_steps = self.steps[:]
+            
+            #sample direction
+            direction = np.random.choice(self.directions)
+            
+            #select initial location based on direction
+            sx, sy = self.set_initial_position(direction)
+            
+            #place digit at selected initial location
+            x[0, sy:sy+self.digit_size, sx:sx+self.digit_size, 0] += digit.numpy().squeeze()
+            
+            for t in range(1, self.seq_len):
+                np.random.shuffle(digit_steps)
+                step = digit_steps.pop()
+                if direction == 'up':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 0)
+                    x[t, :step, :, 0] = 0
+                elif direction == 'down':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 0)
+                    x[t, -step:, :, 0] = 0
+                elif direction == 'right':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 1)
+                    x[t, :, :step, 0] = 0
+                elif direction == 'left':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 1)
+                    x[t, :, -step:, 0] = 0
+                elif direction == 'up-right':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], step , axis = 1)
+                    x[t, :step, :, 0] = 0
+                    x[t, :, :step, 0] = 0
+                elif direction == 'up-left':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], -step , axis = 1)
+                    x[t, :step, :, 0] = 0
+                    x[t, :, -step:, 0] = 0
+                elif direction == 'down-right':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], step , axis = 1)
+                    x[t, -step:, :, 0] = 0
+                    x[t, :, :step, 0] = 0
+                elif direction == 'down-left':
+                    x[t, :, :, 0] = np.roll(x[t-1, :, :, 0], -step , axis = 0)
+                    x[t, :, :, 0] = np.roll(x[t, :, :, 0], -step , axis = 1)
+                    x[t, -step:, :, 0] = 0
+                    x[t, :, -step:, 0] = 0
+        return x
+
     
     

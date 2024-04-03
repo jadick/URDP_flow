@@ -38,7 +38,10 @@ parser.add_argument('--lambda_FMD', type = float, default = 0.0, help = 'Margina
 parser.add_argument('--path', type = str, default = './data/', help = 'Data path')
 parser.add_argument('--pre_path', type = str, default = './fixed_models/', help ='Path to pretrained weights')
 parser.add_argument('--single_bit', type=int, default=0)
-parser.add_argument('--step', type=int, default=15, help ='step size for mmnist')
+parser.add_argument('--step', type=int, default=15, help ='step size for mmnist, if applicable')
+parser.add_argument('--dataset', type=str, default= 'mmnist_unidir_axis', help ='dataset for training')
+parser.add_argument('--first_train', type=bool, default= False, help ='first training run after mse? not loading discriminators')
+
 
 def set_models_state(list_models, state, FMD, JD, NEW):
     if state =='train':
@@ -135,7 +138,9 @@ def main():
     start = time.time()
     args = parser.parse_args()
     eps = args.eps
+    first_train = args.first_train
     z_dim = eps//2
+    dataset = args.dataset
     dim = args.dim
     lambda_gp = args.lambda_gp
     bs = args.bs
@@ -150,16 +155,19 @@ def main():
     path = args.path
     pre_path = args.pre_path
     single_bit = bool(args.single_bit)
-    step= args.step
+    if dataset == 'mmnist_unidir_4_axis' or dataset == 'mmnist_unidir_2_axis' :
+        step = [11,5]
+    else:
+        step= args.step
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     #set perceptual flags
-    if (lambda_FMD == 0 and lambda_JD == 0 and lambda_NEW == 0): 
-        FMD = JD = NEW = True
-    else:
-        FMD = lambda_FMD > 0
-        JD = lambda_JD > 0
-        NEW = lambda_NEW > 0
+    #if (lambda_FMD == 0 and lambda_JD == 0 and lambda_NEW == 0): 
+    #    FMD = JD = NEW = True
+    #else:
+    FMD = lambda_FMD > 0
+    JD = lambda_JD > 0
+    NEW = lambda_NEW > 0
         
     #set stoch/quant:
     stochastic = True
@@ -170,7 +178,7 @@ def main():
     
     #Create folder:
     folder_name = f'inf-eps/step_{step}/inf-{eps}|lambdaJD_{lambda_JD}|'\
-    + f'lambdaFMD_{lambda_FMD}|lambdaNEW_{lambda_NEW}|lambdaMSE_{lambda_MSE}'
+    + f'lambdaFMD_{lambda_FMD}|lambdaNEW_{lambda_NEW}|lambdaMSE_{lambda_MSE}|dataset_{dataset}'
     print ("Settings: ", folder_name)
 
     os.makedirs('./saved_models/'+ folder_name, exist_ok=True)
@@ -197,17 +205,17 @@ def main():
         ssf.P_encoder.load_state_dict(torch.load(pre_path + '/p_enc.pth'))
         ssf.res_encoder.load_state_dict(torch.load(pre_path + '/r_enc.pth'))
         ssf.res_decoder.load_state_dict(torch.load(pre_path + '/r_dec.pth'))
-        
-        if JD:
-            discriminator_JD.load_state_dict(torch.load(pre_path + '/discriminator_JD.pth'))
-        if NEW:
-            discriminator_NEW.load_state_dict(torch.load(pre_path + '/discriminator_NEW.pth'))
-        if FMD:
-            discriminator_FMD.load_state_dict(torch.load(pre_path + '/discriminator_FMD.pth'))
-  
+        if not first_train:
+            if JD:
+                discriminator_JD.load_state_dict(torch.load(pre_path + '/discriminator_JD.pth'))
+            if NEW:
+                discriminator_NEW.load_state_dict(torch.load(pre_path + '/discriminator_NEW.pth'))
+            if FMD:
+                discriminator_FMD.load_state_dict(torch.load(pre_path + '/discriminator_FMD.pth'))
+
 
     #Define Data Loader
-    train_loader, test_loader = get_dataloader(dataset='mmnist_custom_step',data_root=path, seq_len=3, batch_size=bs, num_digits=1,step=step)
+    train_loader, test_loader = get_dataloader(dataset=dataset,data_root=path, seq_len=3, batch_size=bs, num_digits=1,step=step)
     mse = torch.nn.MSELoss()
 
     #Define optimizers
