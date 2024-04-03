@@ -528,7 +528,7 @@ class MovingMNIST_unidir_4_axis_random(object):
     """
     Data Handler that creates uniderectional MNIST dataset on the fly.
     Each video contains motion in only one direction         
-    Digits starting centered                     
+    Digits starting randomly positioned                     
     Moving in 4 axis 
     """
     def __init__(self, train, data_root, seq_len=3, num_digits=1, image_size=64, step = [11, 5]):
