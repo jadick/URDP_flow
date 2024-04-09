@@ -155,19 +155,19 @@ def main():
     path = args.path
     pre_path = args.pre_path
     single_bit = bool(args.single_bit)
-    if dataset == 'mmnist_unidir_4_axis' or dataset == 'mmnist_unidir_2_axis' :
+    if 'unidir' in dataset:
         step = [11,5]
     else:
         step= args.step
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    #set perceptual flags
-    #if (lambda_FMD == 0 and lambda_JD == 0 and lambda_NEW == 0): 
-    #    FMD = JD = NEW = True
-    #else:
-    FMD = lambda_FMD > 0
-    JD = lambda_JD > 0
-    NEW = lambda_NEW > 0
+    print('step_lenght:', step)
+    #set perceptual flags:
+    if (lambda_FMD == 0 and lambda_JD == 0 and lambda_NEW == 0): 
+        FMD = JD = NEW = True
+    else:
+        FMD = lambda_FMD > 0
+        JD = lambda_JD > 0
+        NEW = lambda_NEW > 0
         
     #set stoch/quant:
     stochastic = True
@@ -185,7 +185,7 @@ def main():
     f = open('./saved_models/'+ folder_name + "/performance.txt", "a")
     print_str = f'l_NEW: {lambda_NEW}, l_JD : {lambda_JD}, l_FMD: {lambda_FMD},'\
             + f' l_MSE: {lambda_MSE}, d_penalty: {d_penalty},step:{step}, L: {L}, z_dim: {z_dim}, bs: {bs}'\
-            + f', bit_rate: {eps}, s_b: {single_bit}\n'
+            + f', bit_rate: {eps}, s_b: {single_bit}, dataset:{dataset}\n'
     f.write(print_str)
     f.write('| EPOCH |      PLF-JD     |      PLF-FMD    |      PLF-NEW    |      MSE        |\n')
     f.close()
@@ -205,13 +205,12 @@ def main():
         ssf.P_encoder.load_state_dict(torch.load(pre_path + '/p_enc.pth'))
         ssf.res_encoder.load_state_dict(torch.load(pre_path + '/r_enc.pth'))
         ssf.res_decoder.load_state_dict(torch.load(pre_path + '/r_dec.pth'))
-        if not first_train:
-            if JD:
-                discriminator_JD.load_state_dict(torch.load(pre_path + '/discriminator_JD.pth'))
-            if NEW:
-                discriminator_NEW.load_state_dict(torch.load(pre_path + '/discriminator_NEW.pth'))
-            if FMD:
-                discriminator_FMD.load_state_dict(torch.load(pre_path + '/discriminator_FMD.pth'))
+        if JD:
+            discriminator_JD.load_state_dict(torch.load(pre_path + '/discriminator_JD.pth'))
+        if NEW:
+            discriminator_NEW.load_state_dict(torch.load(pre_path + '/discriminator_NEW.pth'))
+        if FMD:
+            discriminator_FMD.load_state_dict(torch.load(pre_path + '/discriminator_FMD.pth'))
 
 
     #Define Data Loader
@@ -235,8 +234,8 @@ def main():
             x = x.permute(0, 4, 1, 2, 3).to(device).float()
             x0 = x[:,:,0,...]
             x1 = x[:,:,1,...]
-            with torch.no_grad():
-                x1_hat = ssf(x1, x0) 
+            #with torch.no_grad():
+            x1_hat = ssf(x1, x0) 
                 
             # optimize discriminator_JD
             if JD:
