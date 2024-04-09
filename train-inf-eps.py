@@ -40,7 +40,7 @@ parser.add_argument('--pre_path', type = str, default = './fixed_models/', help 
 parser.add_argument('--single_bit', type=int, default=0)
 parser.add_argument('--step', type=int, default=15, help ='step size for mmnist, if applicable')
 parser.add_argument('--dataset', type=str, default= 'mmnist_unidir_axis', help ='dataset for training')
-parser.add_argument('--first_train', type=bool, default= False, help ='first training run after mse? not loading discriminators')
+#parser.add_argument('--first_train', type=bool, default= False, help ='first training run after mse? not loading discriminators')
 
 
 def set_models_state(list_models, state, FMD, JD, NEW):

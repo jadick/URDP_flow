@@ -43,6 +43,7 @@ parser.add_argument('--single_bit', type=int, default=0)
 parser.add_argument('--step', type=int, default=15, help ='step size for mmnist')
 parser.add_argument('--pre_trained', type = str, default = 'JD', help ='fixed model used to pretrain for mse')
 parser.add_argument('--pre_trained_lambda', type = float, default = 0, help ='lambda for fixed model used to pretrain for mse')
+parser.add_argument('--dataset', type = str, default = 'mmnist_4_axis_random_sample_step', help ='mmnist variant to use')
 def set_models_state(list_models, state, FMD, JD, NEW):
     if state =='train':
         for model in list_models:
@@ -144,6 +145,7 @@ def main():
     zdim_1 = eps1//2
     zdim_2= eps2//2
     dim = args.dim
+    dataset = dim = args.dataset
     lambda_gp = args.lambda_gp
     bs = args.bs
     d_penalty = args.d_penalty
@@ -157,8 +159,11 @@ def main():
     L = args.L
     path = args.path
     pre_path = args.pre_path
-    step= args.step
     pre_trained = args.pre_trained
+    if 'unidir' in dataset:
+        step = [11,5]
+    else:
+        step= args.step
     single_bit = bool(args.single_bit)
     pre_path_fixed = args.pre_path_fixed
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -226,7 +231,7 @@ def main():
   
 
     #Define Data Loader
-    train_loader, test_loader = get_dataloader(dataset='mmnist_custom_step',data_root=path, seq_len=3, batch_size=bs, num_digits=1,step=step)
+    train_loader, test_loader = get_dataloader(dataset=dataset,data_root=path, seq_len=3, batch_size=bs, num_digits=1,step=step)
     mse = torch.nn.MSELoss()
 
     #Define optimizers
