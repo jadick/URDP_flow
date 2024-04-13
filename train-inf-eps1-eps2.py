@@ -28,7 +28,7 @@ parser.add_argument('--lambda_gp', type = int, default = 10, help = 'Gradient pe
 parser.add_argument('--bs', type = int, default = 64, help = 'batch size')
 parser.add_argument('--dim', type = int, default = 128, help = 'Common dimension')
 parser.add_argument('--eps_1', type = int, default = 2, help = 'second frame bitrate')
-parser.add_argument('--eps_2', type = int, default = 8, help = 'third frame bitrate')
+parser.add_argument('--eps_2', type = int, default = 16, help = 'third frame bitrate')
 parser.add_argument('--L', type = int, default = 2, help = 'Quantization parameter')
 parser.add_argument('--skip_fq', type = int, default=5, help = 'Loop frequency for WGAN')
 parser.add_argument('--d_penalty', type = float, default = 0.0, help = 'Diversity penalty')
@@ -44,6 +44,9 @@ parser.add_argument('--step', type=int, default=15, help ='step size for mmnist'
 parser.add_argument('--pre_trained', type = str, default = 'JD', help ='fixed model used to pretrain for mse')
 parser.add_argument('--pre_trained_lambda', type = float, default = 0, help ='lambda for fixed model used to pretrain for mse')
 parser.add_argument('--dataset', type = str, default = 'mmnist_4_axis_random_sample_step', help ='mmnist variant to use')
+parser.add_argument('--learning_rate', type=int, default= 1, help ='learning rate for ssf model(1e-5)')
+
+
 def set_models_state(list_models, state, FMD, JD, NEW):
     if state =='train':
         for model in list_models:
@@ -142,6 +145,7 @@ def main():
     args = parser.parse_args()
     eps1 = args.eps_1
     eps2 = args.eps_2
+    learning_rate = args.learning_rate
     zdim_1 = eps1//2
     zdim_2= eps2//2
     dim = args.dim
@@ -173,14 +177,14 @@ def main():
         FMD = JD = NEW = True
         folder_name = f'inf-eps1-eps2/step_{step}/inf-{eps1}-{eps2}|lambdaJD_{lambda_JD}|'\
         + f'lambdaFMD_{lambda_FMD}|lambdaNEW_{lambda_NEW}'\
-        + f'|lambdaMSE_{lambda_MSE}|pretrained_{pre_trained}_{pre_trained_lambda}'
+        + f'|lambdaMSE_{lambda_MSE}|pretrained_{pre_trained}_{pre_trained_lambda}|dataset_{dataset}'
         print ("Settings: ", folder_name)
     else:
         FMD = lambda_FMD > 0
         JD = lambda_JD > 0
         NEW = lambda_NEW > 0
         folder_name = f'inf-eps1-eps2/step_{step}/inf-{eps1}-{eps2}|lambdaJD_{lambda_JD}|'\
-        + f'lambdaFMD_{lambda_FMD}|lambdaNEW_{lambda_NEW}|lambdaMSE_{lambda_MSE}'
+        + f'lambdaFMD_{lambda_FMD}|lambdaNEW_{lambda_NEW}|lambdaMSE_{lambda_MSE}|dataset_{dataset}'
         print ("Settings: ", folder_name)
         
     #set stoch/quant:
@@ -196,7 +200,7 @@ def main():
     os.makedirs('./saved_models/'+ folder_name, exist_ok=True)
     f = open('./saved_models/'+ folder_name + "/performance.txt", "a")
     print_str = f'l_NEW: {lambda_NEW}, l_JD : {lambda_JD}, l_FMD: {lambda_FMD},'\
-                + f' l_MSE: {lambda_MSE},step: {step}, d_penalty: {d_penalty}, L: {L}, z_dim: {zdim_1}-{zdim_2}, bs: {bs}\n'
+                + f' l_MSE: {lambda_MSE},step: {step}, d_penalty: {d_penalty}, L: {L}, z_dim: {zdim_1}-{zdim_2}, bs: {bs}, dataset: {dataset}\n'
     f.write(print_str)
     f.write('| EPOCH |      PLF-JD     |      PLF-FMD    |      PLF-NEW    |      MSE        |\n')
     f.close()
@@ -235,8 +239,8 @@ def main():
     mse = torch.nn.MSELoss()
 
     #Define optimizers
-    opt_ssf1= torch.optim.RMSprop(ssf1.parameters(), lr=1e-5)
-    opt_ssf2= torch.optim.RMSprop(ssf2.parameters(), lr=1e-5)
+    opt_ssf1= torch.optim.RMSprop(ssf1.parameters(), lr=learning_rate * 1e-5)
+    opt_ssf2= torch.optim.RMSprop(ssf2.parameters(), lr=learning_rate * 1e-5)
     opt_JD = torch.optim.RMSprop(discriminator_JD.parameters(), lr =5e-5) if JD else None
     opt_NEW = torch.optim.RMSprop(discriminator_NEW.parameters(), lr=5e-5) if NEW else None
     opt_FMD = torch.optim.RMSprop(discriminator_FMD.parameters(), lr=5e-5) if FMD else None

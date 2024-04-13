@@ -40,7 +40,7 @@ parser.add_argument('--pre_path', type = str, default = './fixed_models/', help 
 parser.add_argument('--single_bit', type=int, default=0)
 parser.add_argument('--step', type=int, default=15, help ='step size for mmnist, if applicable')
 parser.add_argument('--dataset', type=str, default= 'mmnist_unidir_axis', help ='dataset for training')
-#parser.add_argument('--first_train', type=bool, default= False, help ='first training run after mse? not loading discriminators')
+parser.add_argument('--learning_rate', type=int, default= 1, help ='learning rate for ssf model(1e-5)')
 
 
 def set_models_state(list_models, state, FMD, JD, NEW):
@@ -138,7 +138,7 @@ def main():
     start = time.time()
     args = parser.parse_args()
     eps = args.eps
-    first_train = args.first_train
+    learning_rate = args.learning_rate
     z_dim = eps//2
     dataset = args.dataset
     dim = args.dim
@@ -218,7 +218,7 @@ def main():
     mse = torch.nn.MSELoss()
 
     #Define optimizers
-    opt_ssf= torch.optim.RMSprop(ssf.parameters(), lr=1e-5)
+    opt_ssf= torch.optim.RMSprop(ssf.parameters(), lr= learning_rate * 1e-5)
     opt_JD = torch.optim.RMSprop(discriminator_JD.parameters(), lr =5e-5) if JD else None
     opt_NEW = torch.optim.RMSprop(discriminator_NEW.parameters(), lr=5e-5) if NEW else None
     opt_FMD = torch.optim.RMSprop(discriminator_FMD.parameters(), lr=5e-5) if FMD else None
